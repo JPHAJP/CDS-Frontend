@@ -1,0 +1,24 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:5175/login",
+  "loginUser": "admin@test.local",
+  "loginPassword": "AdminTestPassword123",
+  "executionArgs": {
+    "projectName": "CDS-Frontend",
+    "projectPath": "C:\\Users\\hola\\Documents\\Servicios_JP\\CDS\\CDS-Frontend",
+    "testIds": [
+      "TC011",
+      "TC015",
+      "TC019",
+      "TC022"
+    ],
+    "additionalInstruction": "Run a focused non-destructive demo-user suite. Frontend is http://localhost:5175 and backend is http://localhost:8000. For user dashboard and QR access tests TC011 and TC015, log in with authorized volunteer demo.voluntario@test.local / DemoPassword123!. For admin tests TC019 and TC022, log in with admin@test.local / AdminTestPassword123!. For TC019 search specifically search for demo.personal@test.local and/or demo.voluntario@test.local and verify role/status rows are visible. Do not authorize, reject, unauthorize, or reauthorize users in this run. Do not use camera; if QR scan page is reached, only verify manual mode controls are visible.",
+    "serverMode": "production",
+    "envs": {
+      "API_KEY": "sk-user-kMfS_1bQTxoKL4EUPKeaAjT3mERo73xaK__lKojl3T3QZRVz8t_NSPgMZeYX1DhQXmqMcda6Zo-ObsSnCiFL-XsRzmmi3ph3YTIbBmcDmTYI_e1rhS2KEADMTti-IoYJ4r0"
+    }
+  },
+  "serverPort": 51761
+}

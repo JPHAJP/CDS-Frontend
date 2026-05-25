@@ -1,0 +1,213 @@
+version: "2"
+type: frontend
+tech_stack:
+  - TypeScript
+  - React 19
+  - Vite
+  - Tailwind CSS
+  - React Router
+  - TanStack Query
+  - Axios
+  - lucide-react
+  - react-qr-code
+  - qr-scanner
+routes:
+  - path: /
+    file: src/app/App.tsx
+    auth_required: false
+    description: Redirects users to the dashboard route, which then enforces authentication.
+  - path: /login
+    file: src/features/auth/LoginPage.tsx
+    auth_required: false
+    description: Spanish login page for email and password authentication.
+  - path: /registro
+    file: src/features/auth/RegisterPage.tsx
+    auth_required: false
+    description: Public registration page for non-admin users with identification image upload.
+  - path: /pendiente
+    file: src/features/auth/PendingPage.tsx
+    auth_required: false
+    description: Pending approval state page.
+  - path: /kiosko
+    file: src/features/qr/QRPages.tsx
+    auth_required: false
+    description: Public kiosk route showing the current QR code.
+  - path: /dashboard
+    file: src/features/profile/ProfilePage.tsx
+    auth_required: true
+    description: Authenticated user dashboard with authorization status and QR access action.
+  - path: /perfil
+    file: src/features/profile/ProfilePage.tsx
+    auth_required: true
+    description: Authenticated profile route showing registered user data.
+  - path: /qr
+    file: src/features/qr/QRPages.tsx
+    auth_required: true
+    description: Authorized user QR scan route for entry and exit.
+  - path: /admin
+    file: src/features/admin/AdminPage.tsx
+    auth_required: true
+    description: Admin panel for stats, pending users, search, access logs, users inside, and QR display.
+features:
+  - name: Session bootstrap and route protection
+    description: Loads the current profile using httpOnly cookies and redirects users based on authentication, role, and authorization state.
+    files:
+      - src/app/App.tsx
+      - src/features/auth/AuthProvider.tsx
+      - src/features/auth/auth-context.ts
+      - src/lib/api.ts
+    entry_route: /
+    user_interactions:
+      - Open the root URL.
+      - Wait for session check to finish.
+      - See login page when unauthenticated.
+      - See dashboard or admin panel when authenticated.
+    api_calls:
+      - method: GET
+        endpoint: /profile
+      - method: POST
+        endpoint: /auth/refresh
+    auth_required: false
+  - name: Admin login
+    description: Authenticates seeded admin credentials and redirects admins to the admin panel.
+    files:
+      - src/features/auth/LoginPage.tsx
+      - src/features/auth/AuthProvider.tsx
+      - src/lib/api.ts
+    entry_route: /login
+    user_interactions:
+      - Fill email input with admin@test.local.
+      - Fill password input with AdminTestPassword123!.
+      - Submit login form.
+      - Land on the admin panel.
+      - See safe error message for invalid credentials.
+    api_calls:
+      - method: POST
+        endpoint: /auth/login
+    auth_required: false
+  - name: Public registration
+    description: Allows public non-admin users to register with personal details and an identification image.
+    files:
+      - src/features/auth/RegisterPage.tsx
+      - src/features/auth/AuthProvider.tsx
+      - src/lib/api.ts
+    entry_route: /registro
+    user_interactions:
+      - Fill personal information fields.
+      - Select a public role.
+      - Upload a PNG or JPG identification image.
+      - Submit the registration form.
+      - See pending approval screen.
+    api_calls:
+      - method: POST
+        endpoint: /auth/register
+    auth_required: false
+  - name: Pending approval
+    description: Shows Spanish status copy for users awaiting admin approval.
+    files:
+      - src/features/auth/PendingPage.tsx
+    entry_route: /pendiente
+    user_interactions:
+      - Open pending route after registration or redirect.
+      - Read approval pending state.
+      - Return to login.
+    api_calls: []
+    auth_required: false
+  - name: User dashboard and profile
+    description: Shows authorization status, role, profile data, and QR access when allowed.
+    files:
+      - src/features/profile/ProfilePage.tsx
+      - src/components/ui/Badge.tsx
+      - src/components/ui/Shell.tsx
+    entry_route: /dashboard
+    user_interactions:
+      - View authorization status.
+      - Navigate to QR scan when authorized.
+      - Open profile details.
+      - Logout.
+    api_calls:
+      - method: GET
+        endpoint: /profile
+      - method: POST
+        endpoint: /auth/logout
+    auth_required: true
+  - name: QR scan
+    description: Allows authorized users to register entry or exit using camera or manual QR code entry.
+    files:
+      - src/features/qr/QRPages.tsx
+      - src/lib/api.ts
+    entry_route: /qr
+    user_interactions:
+      - Choose entry or exit.
+      - Choose manual or camera mode.
+      - Paste a QR code or scan with camera.
+      - Submit the scan.
+      - Read success or error message.
+    api_calls:
+      - method: POST
+        endpoint: /qr/scan
+    auth_required: true
+  - name: Public kiosk QR
+    description: Displays the current QR code without authentication for public kiosk screens.
+    files:
+      - src/features/qr/QRPages.tsx
+    entry_route: /kiosko
+    user_interactions:
+      - Open kiosk route.
+      - View current QR code.
+      - See expiration time.
+    api_calls:
+      - method: GET
+        endpoint: /public/qr/current
+    auth_required: false
+  - name: Admin dashboard
+    description: Provides administrative views for stats, pending users, user search, access logs, users inside, and QR display.
+    files:
+      - src/features/admin/AdminPage.tsx
+      - src/features/qr/QRPages.tsx
+      - src/lib/api.ts
+    entry_route: /admin
+    user_interactions:
+      - Switch between admin tabs.
+      - Review system stats.
+      - Filter pending users.
+      - View identification image.
+      - Authorize or reject pending users.
+      - Search users by name or email.
+      - Unauthorize and reauthorize users.
+      - View access logs by date.
+      - Register manual exit for users inside.
+      - View current admin QR.
+    api_calls:
+      - method: GET
+        endpoint: /admin/stats
+      - method: GET
+        endpoint: /admin/users/pending
+      - method: GET
+        endpoint: /admin/users/search
+      - method: GET
+        endpoint: /admin/users/:id/identification-file
+      - method: POST
+        endpoint: /admin/users/:id/authorize
+      - method: POST
+        endpoint: /admin/users/:id/reject
+      - method: POST
+        endpoint: /admin/users/:id/unauthorize
+      - method: POST
+        endpoint: /admin/users/:id/reauthorize
+      - method: GET
+        endpoint: /admin/access-logs
+      - method: GET
+        endpoint: /admin/users-inside
+      - method: POST
+        endpoint: /admin/users/:id/manual-exit
+      - method: GET
+        endpoint: /qr/current
+    auth_required: true
+known_limitations:
+  - issue: Camera QR scanning depends on browser camera permission and device availability.
+    location: src/features/qr/QRPages.tsx
+    impact: Automated tests should prefer manual QR code input unless camera mocking is configured.
+  - issue: Some admin workflows require seed data such as pending users or authorized non-admin users.
+    location: src/features/admin/AdminPage.tsx
+    impact: Tests that authorize, reject, unauthorize, reauthorize, or manual-exit users may need setup data through the backend.

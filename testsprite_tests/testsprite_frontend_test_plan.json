@@ -1,0 +1,1002 @@
+[
+  {
+    "id": "TC001",
+    "title": "Sign in and reach the admin dashboard",
+    "description": "An admin can sign in from the login page and land in the admin area with operational controls visible.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the admin dashboard is shown"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system statistics are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Unauthenticated visitors reach the login page from the root route",
+    "description": "This verifies that a public visitor opening the app is directed to the login page when no session is present.",
+    "category": "Session bootstrap and route protection",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the login page is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Register and reach pending approval",
+    "description": "A public visitor can complete registration with an ID image and arrive at the pending approval state after submitting the form.",
+    "category": "Public kiosk QR",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registro"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the registration form with valid user details"
+      },
+      {
+        "type": "action",
+        "description": "Upload a valid identification image"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the pending approval page is shown"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a message indicating the application is awaiting review is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Authenticated residents reach the dashboard from the root route",
+    "description": "This verifies that a signed-in non-admin user opening the app is directed to the dashboard area.",
+    "category": "Session bootstrap and route protection",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Record entry with a valid QR code",
+    "description": "Verifies that an authorized user can submit a valid QR code for entry and receive a success confirmation.",
+    "category": "QR scan",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the QR scan link"
+      },
+      {
+        "type": "action",
+        "description": "Choose entry mode"
+      },
+      {
+        "type": "action",
+        "description": "Choose manual input mode"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the QR code field with a valid QR code"
+      },
+      {
+        "type": "action",
+        "description": "Submit the scan"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a successful entry confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Authenticated admins reach the admin panel from the root route",
+    "description": "This verifies that a signed-in admin opening the app is directed to the admin area.",
+    "category": "Session bootstrap and route protection",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the admin panel is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Prospective residents can submit a complete registration",
+    "description": "This verifies that a public user can complete registration with valid details and reach the pending approval screen.",
+    "category": "Public registration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registro"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required personal information with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Select a public role"
+      },
+      {
+        "type": "action",
+        "description": "Upload a valid identification image"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the pending approval screen is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Record exit with a valid QR code",
+    "description": "Verifies that an authorized user can submit a valid QR code for exit and receive a success confirmation.",
+    "category": "QR scan",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the QR scan link"
+      },
+      {
+        "type": "action",
+        "description": "Choose exit mode"
+      },
+      {
+        "type": "action",
+        "description": "Choose manual input mode"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the QR code field with a valid QR code"
+      },
+      {
+        "type": "action",
+        "description": "Submit the scan"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a successful exit confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Review pending users and authorize one",
+    "description": "An admin can review a pending user, open their identification image, and authorize them so the user leaves the pending list.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the pending users view"
+      },
+      {
+        "type": "action",
+        "description": "Filter pending users by role"
+      },
+      {
+        "type": "action",
+        "description": "Open a pending user's identification image"
+      },
+      {
+        "type": "action",
+        "description": "Authorize the pending user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user no longer appears in the pending list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user's approved state is shown"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Reject a pending user",
+    "description": "An admin can reject a pending user and see that user removed from the pending list.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the pending users view"
+      },
+      {
+        "type": "action",
+        "description": "Reject a pending user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user no longer appears in the pending list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the pending list still shows remaining users or an empty state"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "View dashboard status and profile details",
+    "description": "Verifies that an authenticated user can open the dashboard and see their authorization status and profile information.",
+    "category": "User dashboard and profile",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the authorization status is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile details are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Log out from the dashboard",
+    "description": "Verifies that an authenticated user can log out and return to the login page.",
+    "category": "User dashboard and profile",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard link"
+      },
+      {
+        "type": "action",
+        "description": "Click the log out control"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the login page is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "View pending approval status",
+    "description": "Verifies that a newly registered user can view the pending approval state and return to the login page.",
+    "category": "Pending approval",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /pendiente"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a pending approval message is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to return to the login page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the login page is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "View public kiosk QR and expiration",
+    "description": "A public visitor can open the kiosk page and see the current QR code with its expiration time for walk-up access.",
+    "category": "Public kiosk QR",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /kiosko"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the current QR code is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an expiration time is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Open QR scan access from the dashboard",
+    "description": "Verifies that an authorized user can open the QR scan area from the dashboard when access is allowed.",
+    "category": "User dashboard and profile",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard link"
+      },
+      {
+        "type": "action",
+        "description": "Click the QR access link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the QR scan area is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Show the public kiosk QR and expiration",
+    "description": "Verifies that a public visitor can open the kiosk page and see the current QR code and its expiration information.",
+    "category": "Public kiosk QR display",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /kiosko"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the current QR code is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an expiration time is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Unauthorize and reauthorize a user with a reason",
+    "description": "An admin can unauthorize an authorized user with a valid reason and then reauthorize the same user from search results.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the user search view"
+      },
+      {
+        "type": "action",
+        "description": "Search for an authorized user"
+      },
+      {
+        "type": "action",
+        "description": "Choose to unauthorize the user"
+      },
+      {
+        "type": "action",
+        "description": "Enter a reason of at least 10 characters"
+      },
+      {
+        "type": "action",
+        "description": "Submit the unauthorization"
+      },
+      {
+        "type": "action",
+        "description": "Search for the same user again"
+      },
+      {
+        "type": "action",
+        "description": "Reauthorize the user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user's authorization state is updated"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user can be found again in search results"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "See limited access when not authorized",
+    "description": "Verifies that an authenticated but unauthorized user sees a restricted dashboard state without QR access controls.",
+    "category": "User dashboard and profile",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Click the dashboard link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a restricted access status is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify QR access controls are not displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Search users by name, email, and role",
+    "description": "An admin can search for users and filter the results by role to find matching records with their status and registration date.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the user search view"
+      },
+      {
+        "type": "action",
+        "description": "Search for a user by name or email"
+      },
+      {
+        "type": "action",
+        "description": "Filter users by role"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify matching users are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each result shows the user's state and registration date"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC020",
+    "title": "Register a manual exit for a user inside",
+    "description": "An admin can open the users inside view, record a manual exit for a user with notes, and see that user removed from the inside list.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the users inside view"
+      },
+      {
+        "type": "action",
+        "description": "Enter notes for a manual exit"
+      },
+      {
+        "type": "action",
+        "description": "Register a manual exit for a user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is removed from the inside list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated inside count is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC021",
+    "title": "View access logs for today",
+    "description": "An admin can open the access logs view, choose today's date, and see totals with individual access records.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the access logs view"
+      },
+      {
+        "type": "action",
+        "description": "Select today's date"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access log totals are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify individual access records are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC022",
+    "title": "View the admin QR display",
+    "description": "An admin can open the QR display view and see the current QR code with its expiration time.",
+    "category": "Admin dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the QR display view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the current QR code is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an expiration time is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC023",
+    "title": "Registration requires an identification image",
+    "description": "This verifies that registration cannot be submitted until an identification image is provided.",
+    "category": "Public registration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registro"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required personal information with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Select a public role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an identification image validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC024",
+    "title": "Registration rejects passwords that are too short",
+    "description": "This verifies that registration is blocked when the password does not meet the minimum length requirement.",
+    "category": "Public registration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registro"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required personal information with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a password shorter than the allowed minimum"
+      },
+      {
+        "type": "action",
+        "description": "Select a public role"
+      },
+      {
+        "type": "action",
+        "description": "Upload a valid identification image"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a password validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC025",
+    "title": "Registration rejects ages outside the allowed range",
+    "description": "This verifies that registration is blocked when the entered age is not accepted.",
+    "category": "Public registration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registro"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required personal information with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Fill in an age outside the allowed range"
+      },
+      {
+        "type": "action",
+        "description": "Select a public role"
+      },
+      {
+        "type": "action",
+        "description": "Upload a valid identification image"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an age validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC026",
+    "title": "Registration rejects invalid phone numbers",
+    "description": "This verifies that registration is blocked when the phone number does not match the required format.",
+    "category": "Public registration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /registro"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required personal information with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Fill in an invalid phone number"
+      },
+      {
+        "type": "action",
+        "description": "Select a public role"
+      },
+      {
+        "type": "action",
+        "description": "Upload a valid identification image"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a phone validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC027",
+    "title": "Return to login from pending state",
+    "description": "A pending applicant can leave the pending state page and return to the login screen.",
+    "category": "Public kiosk QR",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /pendiente"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to return to login"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the login page is shown"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the email and password fields are available"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC028",
+    "title": "Pending applicants can return to the login page",
+    "description": "This verifies that a user on the pending approval screen can navigate back to the login page.",
+    "category": "Public registration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /pendiente"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to return to the login page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the login page is displayed"
+      }
+    ],
+    "priority": "Low"
+  }
+]
