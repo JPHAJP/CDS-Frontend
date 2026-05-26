@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type PropsWithChildren } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { authApi, apiErrorMessage, clearSessionHint, hasSessionHint, type RegisterPayload } from "../../lib/api";
+import { authApi, apiErrorMessage, clearSessionHint, type RegisterPayload } from "../../lib/api";
 import type { User } from "../../types/api";
 import { AuthContext, type AuthContextValue } from "./auth-context";
 
@@ -11,7 +11,7 @@ function normalizeStatus(payload: { user: User } | User) {
 export function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
-  const [sessionKnown, setSessionKnown] = useState(() => hasSessionHint());
+  const [sessionKnown, setSessionKnown] = useState(true);
   const profileQuery = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
@@ -66,6 +66,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   });
 
+  const changePasswordMutation = useMutation({
+    mutationFn: (payload: { current_password: string; new_password: string }) => authApi.changePassword(payload),
+    onSuccess: (updatedUser) => {
+      setError(null);
+      queryClient.setQueryData(["profile"], updatedUser);
+    },
+    onError: (mutationError) => setError(apiErrorMessage(mutationError))
+  });
+
   const login = useCallback(
     async (email: string, password: string) => {
       const response = await loginMutation.mutateAsync({ email, password });
@@ -86,6 +95,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
     await logoutMutation.mutateAsync();
   }, [logoutMutation]);
 
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string) => {
+      return changePasswordMutation.mutateAsync({
+        current_password: currentPassword,
+        new_password: newPassword
+      });
+    },
+    [changePasswordMutation]
+  );
+
   const refreshProfile = useCallback(async () => {
     setSessionKnown(true);
     const data = await queryClient.fetchQuery({ queryKey: ["profile"], queryFn: authApi.profile });
@@ -95,14 +114,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const value = useMemo<AuthContextValue>(
     () => ({
       user: profileQuery.data ? normalizeStatus(profileQuery.data) : null,
-      loading: (sessionKnown && profileQuery.isLoading) || loginMutation.isPending || registerMutation.isPending || logoutMutation.isPending,
+      loading:
+        (sessionKnown && profileQuery.isLoading) ||
+        loginMutation.isPending ||
+        registerMutation.isPending ||
+        logoutMutation.isPending ||
+        changePasswordMutation.isPending,
       error,
       login,
       register,
       logout,
+      changePassword,
       refreshProfile
     }),
-    [error, login, loginMutation.isPending, logout, logoutMutation.isPending, profileQuery.data, profileQuery.isLoading, refreshProfile, register, registerMutation.isPending, sessionKnown]
+    [changePassword, changePasswordMutation.isPending, error, login, loginMutation.isPending, logout, logoutMutation.isPending, profileQuery.data, profileQuery.isLoading, refreshProfile, register, registerMutation.isPending, sessionKnown]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

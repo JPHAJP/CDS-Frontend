@@ -34,6 +34,7 @@ export interface User {
   role: Role;
   is_super_admin: boolean;
   is_authorized: boolean;
+  password_change_required: boolean;
   profile_photo_url: string | null;
   access_status: AccessStatus;
   authorization_status: AuthorizationStatus;
@@ -71,6 +72,7 @@ export interface AdminStats {
 export interface CurrentQr {
   qr_code?: string;
   code?: string;
+  qr_url?: string;
   expires_at?: string;
   expiresAt?: string;
   data_url?: string;

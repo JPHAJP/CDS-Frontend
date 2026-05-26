@@ -1,0 +1,10 @@
+name = "cds-login-frontend"
+compatibility_date = "2026-05-26"
+
+routes = [
+  { pattern = "cdslogin.jphajp.com", custom_domain = true }
+]
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"

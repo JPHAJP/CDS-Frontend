@@ -5,6 +5,7 @@ import { useAuth } from "../features/auth/auth-context";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RegisterPage } from "../features/auth/RegisterPage";
 import { PendingPage } from "../features/auth/PendingPage";
+import { ChangePasswordPage } from "../features/auth/ChangePasswordPage";
 import { AdminPage } from "../features/admin/AdminPage";
 import { DashboardPage, ProfilePage } from "../features/profile/ProfilePage";
 import { KioskPage, QRScannerPage } from "../features/qr/QRPages";
@@ -24,6 +25,7 @@ export function App() {
         <Route path="/pendiente" element={<PendingPage />} />
         <Route path="/kiosko" element={<KioskPage />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="/cambiar-contrasena" element={<ChangePasswordPage />} />
           <Route path="/dashboard" element={<DashboardPage dark={dark} onToggleTheme={() => setDark((value) => !value)} />} />
           <Route path="/perfil" element={<ProfilePage dark={dark} onToggleTheme={() => setDark((value) => !value)} />} />
           <Route path="/qr" element={<AuthorizedRoute><QRScannerPage dark={dark} onToggleTheme={() => setDark((value) => !value)} /></AuthorizedRoute>} />
@@ -40,6 +42,8 @@ function ProtectedRoute() {
   const location = useLocation();
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.password_change_required && location.pathname !== "/cambiar-contrasena") return <Navigate to="/cambiar-contrasena" replace />;
+  if (!user.password_change_required && location.pathname === "/cambiar-contrasena") return <Navigate to="/dashboard" replace />;
   if (user.authorization_status === "pending" && user.role !== "admin" && location.pathname !== "/perfil") return <Navigate to="/pendiente" replace />;
   return <Outlet />;
 }
@@ -48,6 +52,7 @@ function HomeRedirect() {
   const { user, loading } = useAuth();
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.password_change_required) return <Navigate to="/cambiar-contrasena" replace />;
   if (user.role === "admin" && user.authorization_status === "authorized") return <Navigate to="/admin" replace />;
   if (user.authorization_status === "pending") return <Navigate to="/pendiente" replace />;
   if (user.is_authorized) return <Navigate to="/qr" replace />;
@@ -56,11 +61,13 @@ function HomeRedirect() {
 
 function AdminRoute({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  if (user?.password_change_required) return <Navigate to="/cambiar-contrasena" replace />;
   return user?.role === "admin" && user.authorization_status === "authorized" ? children : <Navigate to="/dashboard" replace />;
 }
 
 function AuthorizedRoute({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  if (user?.password_change_required) return <Navigate to="/cambiar-contrasena" replace />;
   return user?.is_authorized || (user?.role === "admin" && user.authorization_status === "authorized") ? children : <Navigate to="/dashboard" replace />;
 }
 

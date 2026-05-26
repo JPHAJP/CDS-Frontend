@@ -1,6 +1,6 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { AuthShell } from "../../components/ui/Shell";
 import { Button } from "../../components/ui/Button";
 import { Field, Input, Label } from "../../components/ui/Form";
@@ -8,10 +8,28 @@ import { useAuth } from "./auth-context";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, loading, error } = useAuth();
+  const location = useLocation();
+  const { user: currentUser, login, loading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState("");
+  const qrQuery = new URLSearchParams(location.search).get("qr");
+
+  useEffect(() => {
+    if (!currentUser || loading) return;
+    if (currentUser.password_change_required) {
+      navigate("/cambiar-contrasena", { replace: true });
+      return;
+    }
+    if (qrQuery && (currentUser.is_authorized || (currentUser.role === "admin" && currentUser.authorization_status === "authorized"))) {
+      navigate(`/qr?qr=${encodeURIComponent(qrQuery)}`, { replace: true });
+      return;
+    }
+    if (currentUser.role === "admin" && currentUser.authorization_status === "authorized") navigate("/admin", { replace: true });
+    else if (currentUser.authorization_status === "pending") navigate("/pendiente", { replace: true });
+    else if (currentUser.is_authorized) navigate("/qr", { replace: true });
+    else navigate("/dashboard", { replace: true });
+  }, [currentUser, loading, navigate, qrQuery]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -26,7 +44,12 @@ export function LoginPage() {
     }
     try {
       const user = await login(email, password);
-      if (user.role === "admin" && user.authorization_status === "authorized") navigate("/admin");
+      if (user.password_change_required) {
+        navigate("/cambiar-contrasena");
+        return;
+      }
+      if (qrQuery && (user.is_authorized || (user.role === "admin" && user.authorization_status === "authorized"))) navigate(`/qr?qr=${encodeURIComponent(qrQuery)}`);
+      else if (user.role === "admin" && user.authorization_status === "authorized") navigate("/admin");
       else if (user.authorization_status === "pending") navigate("/pendiente");
       else if (user.is_authorized) navigate("/qr");
       else navigate("/dashboard");

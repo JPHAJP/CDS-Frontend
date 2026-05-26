@@ -1,8 +1,7 @@
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, UserRound } from "lucide-react";
 import type { PropsWithChildren, ReactNode } from "react";
 import logo from "../../assets/LogoCasaDelSol2-980x493.png";
 import { apiAssetUrl } from "../../lib/api";
-import { initials } from "../../lib/format";
 import type { User } from "../../types/api";
 import { Button } from "./Button";
 
@@ -34,24 +33,30 @@ export function PageShell({
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950 dark:bg-slate-950 dark:text-white">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-        <header className="relative rounded-lg border border-slate-200 bg-white p-4 pr-36 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:pr-4">
-          <div className="min-w-0 space-y-3 sm:flex sm:items-center sm:gap-4 sm:space-y-0">
-            <img src={logo} alt="Casa del Sol" className="h-auto w-auto max-w-[150px] object-contain sm:max-w-[230px] lg:max-w-[260px]" />
-            <div className="min-w-0">
-              <h1 className="break-words text-xl font-bold leading-tight sm:text-2xl">{title}</h1>
-              {subtitle ? <p className="text-sm text-slate-500 dark:text-slate-400">{subtitle}</p> : null}
-            </div>
-            {user ? (
-              <div className="flex min-w-0 items-center gap-3 border-t border-slate-100 pt-3 dark:border-slate-800 sm:hidden">
-                <Avatar user={user} />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{fullName}</p>
-                  <p className="truncate text-xs text-slate-500">{user.email}</p>
-                </div>
+        <header className="grid grid-cols-[minmax(0,1fr)_3.25rem] gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-[minmax(0,1fr)_11rem] sm:items-center">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+            <img src={logo} alt="Casa del Sol" className="h-auto w-full max-w-[170px] object-contain sm:max-w-[230px] lg:max-w-[270px]" />
+            <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(14rem,0.65fr)] lg:items-center">
+              <div className="min-w-0">
+                <h1 className="break-words text-xl font-bold leading-tight sm:text-2xl">{title}</h1>
+                {subtitle ? <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p> : null}
               </div>
-            ) : null}
+              {user ? (
+                <div className="flex min-w-0 items-center gap-3 rounded-md border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950">
+                  <Avatar user={user} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{fullName}</p>
+                    <p className="truncate text-xs text-slate-500">{user.email}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
-          <div className="absolute right-3 top-3 flex items-center gap-1 sm:static sm:flex-wrap sm:gap-2">{actions}</div>
+          {actions ? (
+            <div className="grid grid-cols-1 gap-2 justify-items-stretch [&>button]:w-full [&_a]:w-full [&_a]:justify-center">
+              {actions}
+            </div>
+          ) : null}
         </header>
         {children}
       </div>
@@ -64,8 +69,8 @@ export function Avatar({ user, className = "" }: { user: User; className?: strin
   return user.profile_photo_url ? (
     <img src={apiAssetUrl(user.profile_photo_url)} alt={`Foto de ${fullName}`} className={`h-11 w-11 shrink-0 rounded-full border border-slate-200 object-cover dark:border-slate-700 ${className}`} />
   ) : (
-    <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white dark:bg-slate-100 dark:text-slate-950 ${className}`}>
-      {initials(user.nombre_completo, user.apellidos)}
+    <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-full border border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 ${className}`} aria-label={`Sin foto de ${fullName}`}>
+      <UserRound size={20} strokeWidth={1.8} />
     </div>
   );
 }

@@ -130,8 +130,10 @@ export const authApi = {
   register: (payload: FormData) => api.post<User>("/auth/register", payload, { headers: { "Content-Type": "multipart/form-data" } }).then((response) => response.data),
   refresh: () => api.post<AuthResponse>("/auth/refresh").then((response) => response.data),
   logout: () => api.post<{ message: string }>("/auth/logout").then((response) => response.data),
+  changePassword: (payload: { current_password: string; new_password: string }) =>
+    api.post<User>("/auth/change-password", payload).then((response) => response.data),
   status: () => api.get<{ user: User } | User>("/auth/status").then((response) => response.data),
-  profile: () => api.get<User>("/profile").then((response) => response.data),
+  profile: () => api.get<User>("/profile", { params: { _: Date.now() } }).then((response) => response.data),
   uploadProfilePhoto: (payload: FormData) => api.post<User>("/profile/photo", payload, { headers: { "Content-Type": "multipart/form-data" } }).then((response) => response.data)
 };
 
@@ -150,6 +152,8 @@ export const adminApi = {
   reject: (id: string) => api.post(`/admin/users/${id}/reject`).then((response) => response.data),
   promoteAdmin: (id: string, password: string) => api.post(`/admin/users/${id}/promote-admin`, { password }).then((response) => response.data),
   demoteAdmin: (id: string, payload: { password: string; role: PublicRole }) => api.post(`/admin/users/${id}/demote-admin`, payload).then((response) => response.data),
+  resetPassword: (id: string) =>
+    api.post<{ message: string; temporary_password: string; user_id: string }>(`/admin/users/${id}/reset-password`).then((response) => response.data),
   unauthorize: (id: string, reason: string) => api.post(`/admin/users/${id}/unauthorize`, { reason }).then((response) => response.data),
   reauthorize: (id: string) => api.post(`/admin/users/${id}/reauthorize`).then((response) => response.data),
   accessLogs: (params: { page?: number; per_page?: number; date?: string; date_from?: string; date_to?: string; role?: string; access_type?: AccessType | "" }) =>

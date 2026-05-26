@@ -9,6 +9,7 @@ export type AuthContextValue = {
   login: (email: string, password: string) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User>;
   logout: () => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<User>;
   refreshProfile: () => Promise<User | null>;
 };
 

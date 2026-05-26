@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import QrScanner from "qr-scanner";
 import QRCode from "react-qr-code";
 import { Camera, LogIn, LogOut, RefreshCw, UserRound } from "lucide-react";
@@ -8,14 +8,17 @@ import { Button } from "../../components/ui/Button";
 import { Field, Input, Label, Select } from "../../components/ui/Form";
 import { PageShell, Panel, ThemeToggle } from "../../components/ui/Shell";
 import { apiErrorMessage, apiWebSocketUrl, qrApi } from "../../lib/api";
-import { formatDate, qrValue } from "../../lib/format";
+import { formatDate, qrCodeFromScan, qrLoginValue } from "../../lib/format";
 import type { AccessType } from "../../types/api";
 import { useAuth } from "../auth/auth-context";
 
 export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggleTheme: () => void }) {
   const { user, logout, refreshProfile } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scannerRef = useRef<QrScanner | null>(null);
+  const submittedQueryCodeRef = useRef("");
   const [code, setCode] = useState("");
   const [accessType, setAccessType] = useState<AccessType>(user?.access_status === "in" ? "exit" : "entry");
   const [message, setMessage] = useState("");
@@ -31,7 +34,9 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
     setError("");
     setMessage("");
     try {
-      const response = await qrApi.scan({ qr_code: value.trim(), access_type: accessType });
+      const normalizedCode = qrCodeFromScan(value);
+      setCode(normalizedCode);
+      const response = await qrApi.scan({ qr_code: normalizedCode, access_type: accessType });
       setMessage(response.message || "Registro guardado correctamente.");
       setCode("");
       await refreshProfile();
@@ -48,8 +53,9 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
     setError("");
     scannerRef.current?.destroy();
     scannerRef.current = new QrScanner(videoRef.current, (result) => {
-      setCode(result);
-      void submit(result);
+      const normalizedCode = qrCodeFromScan(result);
+      setCode(normalizedCode);
+      void submit(normalizedCode);
       scannerRef.current?.stop();
     });
     await scannerRef.current.start();
@@ -61,6 +67,15 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
     void startCamera();
     return () => scannerRef.current?.stop();
   }, [startCamera]);
+
+  useEffect(() => {
+    const queryCode = searchParams.get("qr") ?? searchParams.get("code") ?? "";
+    const normalizedCode = qrCodeFromScan(queryCode);
+    if (!normalizedCode || submittedQueryCodeRef.current === normalizedCode) return;
+    submittedQueryCodeRef.current = normalizedCode;
+    setCode(normalizedCode);
+    void submit(normalizedCode).then(() => navigate("/qr", { replace: true }));
+  }, [navigate, searchParams, submit]);
 
   return (
     <PageShell
@@ -100,7 +115,7 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
           <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); void submit(code); }}>
             <Field>
               <Label>Entrada manual</Label>
-              <Input value={code} onChange={(event) => setCode(event.target.value)} minLength={32} placeholder="Pega el codigo QR si no puedes usar la camara" required />
+              <Input value={code} onChange={(event) => setCode(qrCodeFromScan(event.target.value))} minLength={32} placeholder="Pega el codigo QR si no puedes usar la camara" required />
             </Field>
             <Button disabled={scanning || !code.trim()}>
               {accessType === "entry" ? <LogIn size={18} /> : <LogOut size={18} />}
@@ -115,7 +130,7 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
 
 export function KioskPage() {
   const query = useQuery({ queryKey: ["public-qr"], queryFn: qrApi.currentPublic, refetchInterval: 30_000 });
-  const value = query.data ? qrValue(query.data) : "";
+  const value = query.data ? qrLoginValue(query.data) : "";
   const [insideCount, setInsideCount] = useState(0);
   const [scanState, setScanState] = useState<"idle" | "success" | "failure">("idle");
 
@@ -167,7 +182,7 @@ export function KioskPage() {
 
 export function AdminQRPanel() {
   const query = useQuery({ queryKey: ["admin-qr"], queryFn: qrApi.currentAdmin, refetchInterval: 30_000 });
-  const value = query.data ? qrValue(query.data) : "";
+  const value = query.data ? qrLoginValue(query.data) : "";
   return (
     <Panel className="text-center">
       <h2 className="mb-4 text-lg font-semibold">QR vigente</h2>

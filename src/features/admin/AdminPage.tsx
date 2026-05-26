@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Download, Eye, LogIn, LogOut, Search, ShieldMinus, ShieldPlus, UserCog, UserMinus, UserRound, UserX } from "lucide-react";
+import { Check, Download, Eye, KeyRound, LogIn, LogOut, Search, ShieldMinus, ShieldPlus, UserCog, UserMinus, UserRound, UserX } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { RoleBadge, StatusBadge } from "../../components/ui/Badge";
@@ -162,6 +162,7 @@ function UserRow({ user }: { user: User }) {
   const [showReason, setShowReason] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
   const [showDemote, setShowDemote] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState("");
   const [identification, setIdentification] = useState(false);
   const [identificationUrl, setIdentificationUrl] = useState("");
   const identificationQuery = useQuery({
@@ -202,6 +203,13 @@ function UserRow({ user }: { user: User }) {
       invalidate();
     }
   });
+  const resetPassword = useMutation({
+    mutationFn: () => adminApi.resetPassword(user.id),
+    onSuccess: (result) => {
+      setTemporaryPassword(result.temporary_password);
+      invalidate();
+    }
+  });
   const unauthorize = useMutation({ mutationFn: () => adminApi.unauthorize(user.id, reason), onSuccess: () => { setShowReason(false); setReason(""); invalidate(); } });
   const reauthorize = useMutation({ mutationFn: () => adminApi.reauthorize(user.id), onSuccess: invalidate });
   const manualAccess = useMutation({
@@ -212,12 +220,21 @@ function UserRow({ user }: { user: User }) {
       invalidate();
     }
   });
-  const busy = authorize.isPending || reject.isPending || promoteAdmin.isPending || demoteAdmin.isPending || unauthorize.isPending || reauthorize.isPending || manualAccess.isPending;
+  const busy =
+    authorize.isPending ||
+    reject.isPending ||
+    promoteAdmin.isPending ||
+    demoteAdmin.isPending ||
+    unauthorize.isPending ||
+    reauthorize.isPending ||
+    manualAccess.isPending ||
+    resetPassword.isPending;
   const isPending = user.authorization_status === "pending";
   const isAuthorized = user.authorization_status === "authorized";
   const isSelf = currentUser?.id === user.id;
   const canPromoteAdmin = Boolean(currentUser?.role === "admin" && user.role !== "admin" && isAuthorized && !isSelf);
   const canDemoteAdmin = Boolean(currentUser?.is_super_admin && user.role === "admin" && !user.is_super_admin && !isSelf);
+  const canResetPassword = Boolean(currentUser?.role === "admin" && user.role !== "admin" && !user.is_super_admin && !isSelf);
   return (
     <>
       <tr>
@@ -251,8 +268,10 @@ function UserRow({ user }: { user: User }) {
             {isAuthorized ? <Button variant="ghost" disabled={busy} onClick={() => setShowManual((value) => !value)}><LogIn size={16} /> Acceso admin</Button> : null}
             {canPromoteAdmin ? <Button variant="secondary" disabled={busy} onClick={() => { setShowDemote(false); setShowPromote((value) => !value); }}><UserCog size={16} /> Hacer admin</Button> : null}
             {canDemoteAdmin ? <Button variant="danger" disabled={busy} onClick={() => { setShowPromote(false); setShowDemote((value) => !value); }}><UserMinus size={16} /> Quitar admin</Button> : null}
+            {canResetPassword ? <Button variant="ghost" disabled={busy} onClick={() => resetPassword.mutate()}><KeyRound size={16} /> Recuperar contraseña</Button> : null}
           </div>
-          {[authorize.error, reject.error, promoteAdmin.error, demoteAdmin.error, unauthorize.error, reauthorize.error, manualAccess.error].find(Boolean) ? <p className="mt-2 text-xs text-red-600">{apiErrorMessage(authorize.error ?? reject.error ?? promoteAdmin.error ?? demoteAdmin.error ?? unauthorize.error ?? reauthorize.error ?? manualAccess.error)}</p> : null}
+          {temporaryPassword ? <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Temporal: {temporaryPassword}</p> : null}
+          {[authorize.error, reject.error, promoteAdmin.error, demoteAdmin.error, unauthorize.error, reauthorize.error, manualAccess.error, resetPassword.error].find(Boolean) ? <p className="mt-2 text-xs text-red-600">{apiErrorMessage(authorize.error ?? reject.error ?? promoteAdmin.error ?? demoteAdmin.error ?? unauthorize.error ?? reauthorize.error ?? manualAccess.error ?? resetPassword.error)}</p> : null}
         </td>
       </tr>
       {showPromote && canPromoteAdmin ? (

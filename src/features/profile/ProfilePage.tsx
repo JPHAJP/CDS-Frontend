@@ -150,7 +150,9 @@ export function ProfilePage({ dark, onToggleTheme }: { dark: boolean; onToggleTh
         <div className="md:col-span-2">
           <p className="mb-2 text-xs text-slate-500">Acciones</p>
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary"><Link to="/dashboard" className="inline-flex items-center gap-2"><BadgeCheck size={18} /> Dashboard</Link></Button>
+            {user.role === "admin" && user.authorization_status === "authorized" ? (
+              <Button variant="secondary"><Link to="/admin" className="inline-flex items-center gap-2"><BadgeCheck size={18} /> Dashboard</Link></Button>
+            ) : null}
             {user.is_authorized ? <Button><Link to="/qr" className="inline-flex items-center gap-2"><QrCode size={18} /> QR</Link></Button> : null}
           </div>
         </div>
