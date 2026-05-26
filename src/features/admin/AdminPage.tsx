@@ -258,17 +258,21 @@ function UserRow({ user }: { user: User }) {
           </div>
         </td>
         <td>{formatDate(user.created_at)}</td>
-        <td>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="ghost" onClick={() => setIdentification((value) => !value)}><Eye size={16} /> ID</Button>
-            {isPending ? <Button variant="success" disabled={busy} onClick={() => authorize.mutate()}><Check size={16} /> Autorizar</Button> : null}
-            {isPending ? <Button variant="danger" disabled={busy} onClick={() => reject.mutate()}><UserX size={16} /> Rechazar</Button> : null}
-            {isAuthorized ? <Button variant="danger" disabled={busy} onClick={() => setShowReason((value) => !value)}><ShieldMinus size={16} /> Desautorizar</Button> : null}
-            {user.authorization_status === "unauthorized" ? <Button variant="success" disabled={busy} onClick={() => reauthorize.mutate()}><ShieldPlus size={16} /> Reautorizar</Button> : null}
-            {isAuthorized ? <Button variant="ghost" disabled={busy} onClick={() => setShowManual((value) => !value)}><LogIn size={16} /> Acceso admin</Button> : null}
-            {canPromoteAdmin ? <Button variant="secondary" disabled={busy} onClick={() => { setShowDemote(false); setShowPromote((value) => !value); }}><UserCog size={16} /> Hacer admin</Button> : null}
-            {canDemoteAdmin ? <Button variant="danger" disabled={busy} onClick={() => { setShowPromote(false); setShowDemote((value) => !value); }}><UserMinus size={16} /> Quitar admin</Button> : null}
-            {canResetPassword ? <Button variant="ghost" disabled={busy} onClick={() => resetPassword.mutate()}><KeyRound size={16} /> Recuperar contraseña</Button> : null}
+        <td className="align-top">
+          <div className="grid min-w-[320px] gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button className="min-w-[132px] justify-start" variant="ghost" onClick={() => setIdentification((value) => !value)}><Eye size={16} /> ID</Button>
+              {isPending ? <Button className="min-w-[132px] justify-start" variant="success" disabled={busy} onClick={() => authorize.mutate()}><Check size={16} /> Autorizar</Button> : null}
+              {isPending ? <Button className="min-w-[132px] justify-start" variant="danger" disabled={busy} onClick={() => reject.mutate()}><UserX size={16} /> Rechazar</Button> : null}
+              {isAuthorized ? <Button className="min-w-[132px] justify-start" variant="danger" disabled={busy} onClick={() => setShowReason((value) => !value)}><ShieldMinus size={16} /> Desautorizar</Button> : null}
+              {user.authorization_status === "unauthorized" ? <Button className="min-w-[132px] justify-start" variant="success" disabled={busy} onClick={() => reauthorize.mutate()}><ShieldPlus size={16} /> Reautorizar</Button> : null}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {isAuthorized ? <Button className="min-w-[170px] justify-start" variant="ghost" disabled={busy} onClick={() => setShowManual((value) => !value)}><LogIn size={16} /> Acceso admin</Button> : null}
+              {canPromoteAdmin ? <Button className="min-w-[170px] justify-start" variant="secondary" disabled={busy} onClick={() => { setShowDemote(false); setShowPromote((value) => !value); }}><UserCog size={16} /> Hacer admin</Button> : null}
+              {canDemoteAdmin ? <Button className="min-w-[170px] justify-start" variant="danger" disabled={busy} onClick={() => { setShowPromote(false); setShowDemote((value) => !value); }}><UserMinus size={16} /> Quitar admin</Button> : null}
+              {canResetPassword ? <Button className="min-w-[170px] justify-start" variant="ghost" disabled={busy} onClick={() => resetPassword.mutate()}><KeyRound size={16} /> Recuperar contraseña</Button> : null}
+            </div>
           </div>
           {temporaryPassword ? <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Temporal: {temporaryPassword}</p> : null}
           {[authorize.error, reject.error, promoteAdmin.error, demoteAdmin.error, unauthorize.error, reauthorize.error, manualAccess.error, resetPassword.error].find(Boolean) ? <p className="mt-2 text-xs text-red-600">{apiErrorMessage(authorize.error ?? reject.error ?? promoteAdmin.error ?? demoteAdmin.error ?? unauthorize.error ?? reauthorize.error ?? manualAccess.error ?? resetPassword.error)}</p> : null}

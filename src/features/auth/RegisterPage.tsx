@@ -7,6 +7,9 @@ import { Field, Input, Label, Select } from "../../components/ui/Form";
 import { PUBLIC_ROLES, ROLE_LABELS } from "../../lib/constants";
 import type { PublicRole } from "../../types/api";
 import { useAuth } from "./auth-context";
+import manualVoluntariadoPdf from "../../assets/docs/manual-voluntariado-gvma.pdf";
+import avisoPrivacidadPdf from "../../assets/docs/aviso-privacidad-qr.pdf";
+import reglamentoQrPdf from "../../assets/docs/reglamento-qr.pdf";
 
 const initial = {
   email: "",
@@ -20,11 +23,21 @@ const initial = {
   foto_identificacion: null as File | null
 };
 
+const VOLUNTEER_DOCUMENTS = [
+  { key: "manual_voluntariado", title: "Manual de Voluntariado", url: manualVoluntariadoPdf },
+  { key: "aviso_privacidad_qr", title: "Aviso de Privacidad QR", url: avisoPrivacidadPdf },
+  { key: "reglamento_qr", title: "Reglamento QR", url: reglamentoQrPdf }
+] as const;
+
 export function RegisterPage() {
   const navigate = useNavigate();
   const { register, loading, error } = useAuth();
   const [form, setForm] = useState(initial);
   const [localError, setLocalError] = useState("");
+  const [openedDocs, setOpenedDocs] = useState<Record<string, boolean>>({});
+  const [acceptedDocs, setAcceptedDocs] = useState<Record<string, boolean>>({});
+  const [activeDocIndex, setActiveDocIndex] = useState<number | null>(null);
+  const [canConfirmRead, setCanConfirmRead] = useState(false);
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setLocalError("");
@@ -39,12 +52,39 @@ export function RegisterPage() {
     if (!/^\+?[0-9]{10,15}$/.test(form.telefono)) return setLocalError("El telefono debe tener de 10 a 15 digitos, con + opcional.");
     if (!form.foto_identificacion) return setLocalError("Adjunta una identificacion en PNG o JPG.");
     if (!["image/png", "image/jpeg"].includes(form.foto_identificacion.type)) return setLocalError("La identificacion debe ser PNG, JPG o JPEG.");
+    if (form.role === "voluntarios") {
+      const allAccepted = VOLUNTEER_DOCUMENTS.every((document) => acceptedDocs[document.key]);
+      if (!allAccepted) return setLocalError("Para voluntariado debes leer y aceptar todos los documentos obligatorios.");
+    }
     try {
-      await register(form);
+      await register({
+        ...form,
+        accepted_documents: form.role === "voluntarios" ? VOLUNTEER_DOCUMENTS.map((document) => document.key) : []
+      });
       navigate("/pendiente");
     } catch {
       // El mensaje visible lo gestiona AuthProvider.
     }
+  }
+
+  function openDocument(index: number) {
+    if (index > 0 && !acceptedDocs[VOLUNTEER_DOCUMENTS[index - 1].key]) {
+      setLocalError("Debes completar el documento anterior antes de continuar.");
+      return;
+    }
+    setLocalError("");
+    setCanConfirmRead(false);
+    setActiveDocIndex(index);
+    setTimeout(() => setCanConfirmRead(true), 4000);
+    setOpenedDocs((current) => ({ ...current, [VOLUNTEER_DOCUMENTS[index].key]: true }));
+  }
+
+  function confirmRead() {
+    if (activeDocIndex === null) return;
+    const document = VOLUNTEER_DOCUMENTS[activeDocIndex];
+    setAcceptedDocs((current) => ({ ...current, [document.key]: true }));
+    setActiveDocIndex(null);
+    setCanConfirmRead(false);
   }
 
   return (
@@ -66,11 +106,57 @@ export function RegisterPage() {
           <Field><Label>Identificacion</Label><Input type="file" accept="image/png,image/jpeg" onChange={(event) => update("foto_identificacion", event.target.files?.[0] ?? null)} required /></Field>
         </div>
         <Field><Label>Direccion</Label><Input value={form.direccion} onChange={(event) => update("direccion", event.target.value)} required maxLength={255} /></Field>
+        {form.role === "voluntarios" ? (
+          <section className="space-y-3 rounded-md border border-slate-200 p-4 dark:border-slate-800">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white">Documentos obligatorios para voluntariado</h3>
+              <p className="text-sm text-slate-500">Debes abrir cada documento en orden, revisarlo y confirmar lectura para habilitar el registro.</p>
+            </div>
+            <div className="space-y-2">
+              {VOLUNTEER_DOCUMENTS.map((document, index) => {
+                const accepted = Boolean(acceptedDocs[document.key]);
+                const unlocked = index === 0 || Boolean(acceptedDocs[VOLUNTEER_DOCUMENTS[index - 1].key]);
+                return (
+                  <div key={document.key} className="flex flex-col gap-2 rounded-md border border-slate-200 p-3 dark:border-slate-700">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-medium">{index + 1}. {document.title}</p>
+                      <Button type="button" variant="ghost" disabled={!unlocked} onClick={() => openDocument(index)}>
+                        Abrir documento
+                      </Button>
+                    </div>
+                    <label className="inline-flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={accepted} readOnly />
+                      <span>{accepted ? "Leido y aceptado" : "Pendiente de lectura y aceptacion"}</span>
+                    </label>
+                    {!openedDocs[document.key] ? <p className="text-xs text-slate-500">Aun no se ha abierto este documento.</p> : null}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
         <Button className="w-full" disabled={loading}><UserPlus size={18} /> Enviar registro</Button>
         <p className="text-center text-sm text-slate-500 dark:text-slate-400">
           ¿Ya tienes cuenta? <Link className="font-semibold text-casa-cyan" to="/login">Inicia sesion</Link>
         </p>
       </form>
+      {activeDocIndex !== null ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="flex h-[92vh] w-full max-w-5xl flex-col rounded-md bg-white p-4 dark:bg-slate-900">
+            <h3 className="mb-2 text-base font-semibold">{VOLUNTEER_DOCUMENTS[activeDocIndex].title}</h3>
+            <p className="mb-3 text-sm text-slate-500">Recorre el contenido y al finalizar confirma lectura para continuar.</p>
+            <iframe
+              title={VOLUNTEER_DOCUMENTS[activeDocIndex].title}
+              src={VOLUNTEER_DOCUMENTS[activeDocIndex].url}
+              className="min-h-0 flex-1 rounded border border-slate-200 dark:border-slate-700"
+            />
+            <div className="mt-3 flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setActiveDocIndex(null)}>Cerrar</Button>
+              <Button type="button" disabled={!canConfirmRead} onClick={confirmRead}>Confirmar lectura y aceptar</Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AuthShell>
   );
 }

@@ -182,4 +182,5 @@ export type RegisterPayload = {
   telefono: string;
   role: PublicRole;
   foto_identificacion: File | null;
+  accepted_documents?: string[];
 };

@@ -50,6 +50,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
       form.set("telefono", payload.telefono);
       form.set("role", payload.role);
       if (payload.foto_identificacion) form.set("foto_identificacion", payload.foto_identificacion);
+      if (payload.accepted_documents && payload.accepted_documents.length > 0) {
+        form.set("accepted_documents", JSON.stringify(payload.accepted_documents));
+      }
       return authApi.register(form);
     },
     onSuccess: () => setError(null),
