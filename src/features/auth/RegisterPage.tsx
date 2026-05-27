@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { UserPlus } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { AuthShell } from "../../components/ui/Shell";
 import { Button } from "../../components/ui/Button";
 import { Field, Input, Label, Select } from "../../components/ui/Form";
@@ -10,6 +10,10 @@ import { useAuth } from "./auth-context";
 import manualVoluntariadoPdf from "../../assets/docs/manual-voluntariado-gvma.pdf";
 import avisoPrivacidadPdf from "../../assets/docs/aviso-privacidad-qr.pdf";
 import reglamentoQrPdf from "../../assets/docs/reglamento-qr.pdf";
+import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
+import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+GlobalWorkerOptions.workerSrc = workerSrc;
 
 const initial = {
   email: "",
@@ -37,7 +41,14 @@ export function RegisterPage() {
   const [openedDocs, setOpenedDocs] = useState<Record<string, boolean>>({});
   const [acceptedDocs, setAcceptedDocs] = useState<Record<string, boolean>>({});
   const [activeDocIndex, setActiveDocIndex] = useState<number | null>(null);
+  const [pdfPage, setPdfPage] = useState(1);
+  const [pdfPageCount, setPdfPageCount] = useState(0);
+  const [pdfVisitedPages, setPdfVisitedPages] = useState<Record<number, boolean>>({});
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState("");
   const [canConfirmRead, setCanConfirmRead] = useState(false);
+  const [pdfDocument, setPdfDocument] = useState<any>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setLocalError("");
@@ -52,14 +63,12 @@ export function RegisterPage() {
     if (!/^\+?[0-9]{10,15}$/.test(form.telefono)) return setLocalError("El telefono debe tener de 10 a 15 digitos, con + opcional.");
     if (!form.foto_identificacion) return setLocalError("Adjunta una identificacion en PNG o JPG.");
     if (!["image/png", "image/jpeg"].includes(form.foto_identificacion.type)) return setLocalError("La identificacion debe ser PNG, JPG o JPEG.");
-    if (form.role === "voluntarios") {
-      const allAccepted = VOLUNTEER_DOCUMENTS.every((document) => acceptedDocs[document.key]);
-      if (!allAccepted) return setLocalError("Para voluntariado debes leer y aceptar todos los documentos obligatorios.");
-    }
+    const allAccepted = VOLUNTEER_DOCUMENTS.every((document) => acceptedDocs[document.key]);
+    if (!allAccepted) return setLocalError("Debes leer y aceptar todos los documentos obligatorios para registrarte.");
     try {
       await register({
         ...form,
-        accepted_documents: form.role === "voluntarios" ? VOLUNTEER_DOCUMENTS.map((document) => document.key) : []
+        accepted_documents: VOLUNTEER_DOCUMENTS.map((document) => document.key)
       });
       navigate("/pendiente");
     } catch {
@@ -73,9 +82,12 @@ export function RegisterPage() {
       return;
     }
     setLocalError("");
-    setCanConfirmRead(false);
     setActiveDocIndex(index);
-    setTimeout(() => setCanConfirmRead(true), 4000);
+    setPdfPage(1);
+    setPdfPageCount(0);
+    setPdfVisitedPages({});
+    setPdfError("");
+    setCanConfirmRead(false);
     setOpenedDocs((current) => ({ ...current, [VOLUNTEER_DOCUMENTS[index].key]: true }));
   }
 
@@ -84,8 +96,85 @@ export function RegisterPage() {
     const document = VOLUNTEER_DOCUMENTS[activeDocIndex];
     setAcceptedDocs((current) => ({ ...current, [document.key]: true }));
     setActiveDocIndex(null);
-    setCanConfirmRead(false);
+    setPdfDocument(null);
+    setPdfPage(1);
+    setPdfPageCount(0);
+    setPdfVisitedPages({});
+    setPdfError("");
   }
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDocument() {
+      if (activeDocIndex === null) return;
+      setPdfLoading(true);
+      setPdfError("");
+      setCanConfirmRead(false);
+      try {
+        const loadingTask = getDocument(VOLUNTEER_DOCUMENTS[activeDocIndex].url);
+        const loaded = await loadingTask.promise;
+        if (cancelled) return;
+        setPdfDocument(loaded);
+        setPdfPageCount(loaded.numPages);
+        setPdfPage(1);
+        setPdfVisitedPages({ 1: true });
+      } catch {
+        if (cancelled) return;
+        setPdfError("No se pudo abrir el documento. Intenta de nuevo.");
+      } finally {
+        if (!cancelled) setPdfLoading(false);
+      }
+    }
+    void loadDocument();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeDocIndex]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function renderPage() {
+      if (!pdfDocument || !canvasRef.current) return;
+      setPdfLoading(true);
+      try {
+        const page = await pdfDocument.getPage(pdfPage);
+        if (cancelled || !canvasRef.current) return;
+        const viewport = page.getViewport({ scale: 1 });
+        const containerWidth = Math.min(window.innerWidth - 56, 960);
+        const scale = Math.max(0.6, containerWidth / viewport.width);
+        const scaledViewport = page.getViewport({ scale });
+        const pixelRatio = window.devicePixelRatio || 1;
+        const canvas = canvasRef.current;
+        const context = canvas.getContext("2d");
+        if (!context) return;
+        canvas.width = Math.floor(scaledViewport.width * pixelRatio);
+        canvas.height = Math.floor(scaledViewport.height * pixelRatio);
+        canvas.style.width = `${Math.floor(scaledViewport.width)}px`;
+        canvas.style.height = `${Math.floor(scaledViewport.height)}px`;
+        context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
+        if (!cancelled) {
+          setPdfVisitedPages((current) => ({ ...current, [pdfPage]: true }));
+        }
+      } finally {
+        if (!cancelled) setPdfLoading(false);
+      }
+    }
+    void renderPage();
+    return () => {
+      cancelled = true;
+    };
+  }, [pdfDocument, pdfPage]);
+
+  useEffect(() => {
+    if (pdfPageCount > 0 && Object.keys(pdfVisitedPages).length >= pdfPageCount && pdfPage === pdfPageCount) {
+      setCanConfirmRead(true);
+    } else {
+      setCanConfirmRead(false);
+    }
+  }, [pdfPage, pdfPageCount, pdfVisitedPages]);
+
+  const pagesVisitedCount = useMemo(() => Object.keys(pdfVisitedPages).length, [pdfVisitedPages]);
 
   return (
     <AuthShell>
@@ -106,53 +195,74 @@ export function RegisterPage() {
           <Field><Label>Identificacion</Label><Input type="file" accept="image/png,image/jpeg" onChange={(event) => update("foto_identificacion", event.target.files?.[0] ?? null)} required /></Field>
         </div>
         <Field><Label>Direccion</Label><Input value={form.direccion} onChange={(event) => update("direccion", event.target.value)} required maxLength={255} /></Field>
-        {form.role === "voluntarios" ? (
-          <section className="space-y-3 rounded-md border border-slate-200 p-4 dark:border-slate-800">
-            <div>
-              <h3 className="text-base font-semibold text-slate-900 dark:text-white">Documentos obligatorios para voluntariado</h3>
-              <p className="text-sm text-slate-500">Debes abrir cada documento en orden, revisarlo y confirmar lectura para habilitar el registro.</p>
-            </div>
-            <div className="space-y-2">
-              {VOLUNTEER_DOCUMENTS.map((document, index) => {
-                const accepted = Boolean(acceptedDocs[document.key]);
-                const unlocked = index === 0 || Boolean(acceptedDocs[VOLUNTEER_DOCUMENTS[index - 1].key]);
-                return (
-                  <div key={document.key} className="flex flex-col gap-2 rounded-md border border-slate-200 p-3 dark:border-slate-700">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-medium">{index + 1}. {document.title}</p>
-                      <Button type="button" variant="ghost" disabled={!unlocked} onClick={() => openDocument(index)}>
-                        Abrir documento
-                      </Button>
-                    </div>
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={accepted} readOnly />
-                      <span>{accepted ? "Leido y aceptado" : "Pendiente de lectura y aceptacion"}</span>
-                    </label>
-                    {!openedDocs[document.key] ? <p className="text-xs text-slate-500">Aun no se ha abierto este documento.</p> : null}
+        <section className="space-y-3 rounded-md border border-slate-200 p-4 dark:border-slate-800">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">Documentos obligatorios</h3>
+            <p className="text-sm text-slate-500">Debes abrir cada documento en orden, revisarlo y confirmar lectura para habilitar el registro.</p>
+          </div>
+          <div className="space-y-2">
+            {VOLUNTEER_DOCUMENTS.map((document, index) => {
+              const accepted = Boolean(acceptedDocs[document.key]);
+              const unlocked = index === 0 || Boolean(acceptedDocs[VOLUNTEER_DOCUMENTS[index - 1].key]);
+              return (
+                <div key={document.key} className="flex flex-col gap-2 rounded-md border border-slate-200 p-3 dark:border-slate-700">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium">{index + 1}. {document.title}</p>
+                    <Button type="button" variant="ghost" disabled={!unlocked} onClick={() => openDocument(index)}>
+                      Abrir documento
+                    </Button>
                   </div>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={accepted} readOnly />
+                    <span>{accepted ? "Leido y aceptado" : "Pendiente de lectura y aceptacion"}</span>
+                  </label>
+                  {!openedDocs[document.key] ? <p className="text-xs text-slate-500">Aun no se ha abierto este documento.</p> : null}
+                </div>
+              );
+            })}
+          </div>
+        </section>
         <Button className="w-full" disabled={loading}><UserPlus size={18} /> Enviar registro</Button>
         <p className="text-center text-sm text-slate-500 dark:text-slate-400">
           ¿Ya tienes cuenta? <Link className="font-semibold text-casa-cyan" to="/login">Inicia sesion</Link>
         </p>
       </form>
       {activeDocIndex !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="flex h-[92vh] w-full max-w-5xl flex-col rounded-md bg-white p-4 dark:bg-slate-900">
-            <h3 className="mb-2 text-base font-semibold">{VOLUNTEER_DOCUMENTS[activeDocIndex].title}</h3>
-            <p className="mb-3 text-sm text-slate-500">Recorre el contenido y al finalizar confirma lectura para continuar.</p>
-            <iframe
-              title={VOLUNTEER_DOCUMENTS[activeDocIndex].title}
-              src={VOLUNTEER_DOCUMENTS[activeDocIndex].url}
-              className="min-h-0 flex-1 rounded border border-slate-200 dark:border-slate-700"
-            />
-            <div className="mt-3 flex justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => setActiveDocIndex(null)}>Cerrar</Button>
-              <Button type="button" disabled={!canConfirmRead} onClick={confirmRead}>Confirmar lectura y aceptar</Button>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 p-2 sm:p-4">
+          <div className="flex h-[96vh] w-full max-w-6xl flex-col rounded-md bg-white p-3 dark:bg-slate-900 sm:p-4">
+            <h3 className="mb-1 text-base font-semibold">{VOLUNTEER_DOCUMENTS[activeDocIndex].title}</h3>
+            <p className="mb-2 text-sm text-slate-500">Debes revisar todas las paginas. Avanza con Siguiente hasta la ultima pagina.</p>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 px-3 py-2 text-sm dark:border-slate-700">
+              <span>Pagina {pdfPage} de {pdfPageCount || "..."}</span>
+              <span>Paginas revisadas: {pagesVisitedCount}/{pdfPageCount || "..."}</span>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto rounded border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-950">
+              {pdfLoading ? <p className="py-10 text-center text-sm text-slate-500">Cargando documento...</p> : null}
+              {pdfError ? <p className="py-10 text-center text-sm text-red-600">{pdfError}</p> : null}
+              {!pdfError ? (
+                <div className="mx-auto flex w-full justify-center">
+                  <canvas ref={canvasRef} className="max-w-full rounded bg-white shadow-sm" />
+                </div>
+              ) : null}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex gap-2">
+                <Button type="button" variant="ghost" disabled={pdfPage <= 1 || pdfLoading} onClick={() => setPdfPage((value) => Math.max(1, value - 1))}>
+                  <ChevronLeft size={16} />
+                  Anterior
+                </Button>
+                <Button type="button" variant="ghost" disabled={pdfPageCount === 0 || pdfPage >= pdfPageCount || pdfLoading} onClick={() => setPdfPage((value) => Math.min(pdfPageCount, value + 1))}>
+                  Siguiente
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="ghost" onClick={() => setActiveDocIndex(null)}>Cerrar</Button>
+                <Button type="button" disabled={!canConfirmRead || pdfLoading} onClick={confirmRead}>Confirmar lectura y aceptar</Button>
+              </div>
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              {canConfirmRead ? "Lectura completa, ya puedes aceptar este documento." : "Debes llegar a la ultima pagina y revisar todas las paginas para habilitar Aceptar."}
             </div>
           </div>
         </div>
