@@ -167,6 +167,11 @@ export function KioskPage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  useEffect(() => {
+    const reloadTimer = window.setInterval(() => window.location.reload(), 5 * 60 * 1000);
+    return () => window.clearInterval(reloadTimer);
+  }, []);
+
   const feedbackClasses = {
     idle: "bg-slate-950",
     success: "bg-emerald-500 kiosk-pulse-success",
