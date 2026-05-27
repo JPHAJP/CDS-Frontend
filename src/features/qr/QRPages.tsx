@@ -155,6 +155,18 @@ export function KioskPage() {
     return () => socket.close();
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      if (event.key === "F5" || (event.ctrlKey && key === "r")) {
+        event.preventDefault();
+        window.location.reload();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   const feedbackClasses = {
     idle: "bg-slate-950",
     success: "bg-emerald-500 kiosk-pulse-success",
@@ -165,6 +177,12 @@ export function KioskPage() {
   return (
     <main className={`grid min-h-screen place-items-center p-4 text-white transition-colors duration-300 ${feedbackClasses}`}>
       <section className="w-full max-w-xl rounded-lg bg-white p-6 text-center text-slate-950 shadow-soft transition-transform duration-300">
+        <div className="mb-4 flex justify-end">
+          <Button type="button" variant="ghost" onClick={() => window.location.reload()}>
+            <RefreshCw size={18} />
+            Recargar
+          </Button>
+        </div>
         <div className="mb-4 rounded-md border border-slate-200 bg-slate-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Personas dentro</p>
           <p className="mt-1 text-5xl font-bold text-slate-950">{insideCount}</p>
