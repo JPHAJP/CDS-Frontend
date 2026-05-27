@@ -19,11 +19,50 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scannerRef = useRef<QrScanner | null>(null);
   const submittedQueryCodeRef = useRef("");
+  const overlayIntervalRef = useRef<number | null>(null);
+  const overlayTimeoutRef = useRef<number | null>(null);
+  const scanLockedRef = useRef(false);
   const [code, setCode] = useState("");
   const [accessType, setAccessType] = useState<AccessType>(user?.access_status === "in" ? "exit" : "entry");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [scanLocked, setScanLocked] = useState(false);
+  const [overlayOpen, setOverlayOpen] = useState(false);
+  const [overlayCountdown, setOverlayCountdown] = useState(0);
+
+  const stopOverlayTimers = useCallback(() => {
+    if (overlayIntervalRef.current) {
+      window.clearInterval(overlayIntervalRef.current);
+      overlayIntervalRef.current = null;
+    }
+    if (overlayTimeoutRef.current) {
+      window.clearTimeout(overlayTimeoutRef.current);
+      overlayTimeoutRef.current = null;
+    }
+  }, []);
+
+  const lockScanning = useCallback(() => {
+    stopOverlayTimers();
+    scanLockedRef.current = true;
+    setScanLocked(true);
+    setOverlayOpen(true);
+    setOverlayCountdown(10);
+    overlayIntervalRef.current = window.setInterval(() => {
+      setOverlayCountdown((value) => (value > 0 ? value - 1 : 0));
+    }, 1000);
+    overlayTimeoutRef.current = window.setTimeout(() => {
+      if (overlayIntervalRef.current) {
+        window.clearInterval(overlayIntervalRef.current);
+        overlayIntervalRef.current = null;
+      }
+      setOverlayCountdown(0);
+    }, 10_000);
+  }, [stopOverlayTimers]);
+
+  useEffect(() => {
+    scanLockedRef.current = scanLocked;
+  }, [scanLocked]);
 
   useEffect(() => {
     setAccessType(user?.access_status === "in" ? "exit" : "entry");
@@ -49,19 +88,24 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
   }, [accessType, refreshProfile]);
 
   const startCamera = useCallback(async () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || scanLockedRef.current) return;
     setError("");
     scannerRef.current?.destroy();
     scannerRef.current = new QrScanner(videoRef.current, (result) => {
+      if (scanLockedRef.current) return;
       const normalizedCode = qrCodeFromScan(result);
+      lockScanning();
       setCode(normalizedCode);
       void submit(normalizedCode);
       scannerRef.current?.stop();
     });
     await scannerRef.current.start();
-  }, [submit]);
+  }, [lockScanning, submit]);
 
-  useEffect(() => () => scannerRef.current?.destroy(), []);
+  useEffect(() => () => {
+    scannerRef.current?.destroy();
+    stopOverlayTimers();
+  }, [stopOverlayTimers]);
 
   useEffect(() => {
     void startCamera();
@@ -73,9 +117,17 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
     const normalizedCode = qrCodeFromScan(queryCode);
     if (!normalizedCode || submittedQueryCodeRef.current === normalizedCode) return;
     submittedQueryCodeRef.current = normalizedCode;
+    lockScanning();
     setCode(normalizedCode);
     void submit(normalizedCode).then(() => navigate("/qr", { replace: true }));
-  }, [navigate, searchParams, submit]);
+  }, [lockScanning, navigate, searchParams, submit]);
+
+  const closeOverlay = () => {
+    if (overlayCountdown > 0) return;
+    scanLockedRef.current = false;
+    setOverlayOpen(false);
+    setScanLocked(false);
+  };
 
   return (
     <PageShell
@@ -109,21 +161,39 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
             <video ref={videoRef} className="aspect-video w-full object-cover" muted playsInline />
             <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900 p-3 text-white">
               <span className="text-sm">Camara QR</span>
-              <Button variant="secondary" onClick={startCamera} disabled={scanning}><Camera size={18} /> Iniciar camara</Button>
+              <Button variant="secondary" onClick={startCamera} disabled={scanning || scanLocked}><Camera size={18} /> Iniciar camara</Button>
             </div>
           </div>
-          <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); void submit(code); }}>
+          <form className="space-y-3" onSubmit={(event) => {
+            event.preventDefault();
+            if (scanLockedRef.current) return;
+            lockScanning();
+            void submit(code);
+          }}>
             <Field>
               <Label>Entrada manual</Label>
-              <Input value={code} onChange={(event) => setCode(qrCodeFromScan(event.target.value))} minLength={32} placeholder="Pega el codigo QR si no puedes usar la camara" required />
+              <Input value={code} onChange={(event) => setCode(qrCodeFromScan(event.target.value))} minLength={32} placeholder="Pega el codigo QR si no puedes usar la camara" required disabled={scanLocked} />
             </Field>
-            <Button disabled={scanning || !code.trim()}>
+            <Button disabled={scanning || scanLocked || !code.trim()}>
               {accessType === "entry" ? <LogIn size={18} /> : <LogOut size={18} />}
               Registrar {accessType === "entry" ? "entrada" : "salida"}
             </Button>
           </form>
         </div>
       </Panel>
+      {overlayOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4">
+          <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 text-center shadow-soft dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-xl font-semibold">QR escaneado</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              Espera {overlayCountdown}s para habilitar el cierre.
+            </p>
+            <Button className="mt-4 w-full" type="button" onClick={closeOverlay} disabled={overlayCountdown > 0}>
+              Cerrar
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </PageShell>
   );
 }
