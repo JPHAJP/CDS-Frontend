@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, UserPlus, ZoomIn, ZoomOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { AuthShell } from "../../components/ui/Shell";
 import { Button } from "../../components/ui/Button";
@@ -48,6 +48,7 @@ export function RegisterPage() {
   const [pdfError, setPdfError] = useState("");
   const [canConfirmRead, setCanConfirmRead] = useState(false);
   const [pdfDocument, setPdfDocument] = useState<any>(null);
+  const [pdfZoom, setPdfZoom] = useState(1);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pdfViewportRef = useRef<HTMLDivElement | null>(null);
   const [pdfViewportSize, setPdfViewportSize] = useState({ width: 0, height: 0 });
@@ -90,6 +91,7 @@ export function RegisterPage() {
     setPdfVisitedPages({});
     setPdfError("");
     setCanConfirmRead(false);
+    setPdfZoom(1);
     setOpenedDocs((current) => ({ ...current, [REGISTRATION_DOCUMENTS[index].key]: true }));
   }
 
@@ -103,6 +105,7 @@ export function RegisterPage() {
     setPdfPageCount(0);
     setPdfVisitedPages({});
     setPdfError("");
+    setPdfZoom(1);
   }
 
   useEffect(() => {
@@ -145,7 +148,8 @@ export function RegisterPage() {
         const box = pdfViewportRef.current?.getBoundingClientRect();
         const fitWidth = Math.max(260, (box?.width ?? window.innerWidth) - 24);
         const fitHeight = Math.max(280, (box?.height ?? window.innerHeight * 0.55) - 24);
-        const scale = Math.max(0.25, Math.min(fitWidth / viewport.width, fitHeight / viewport.height));
+        const fitScale = Math.max(0.25, Math.min(fitWidth / viewport.width, fitHeight / viewport.height));
+        const scale = Math.max(0.25, fitScale * pdfZoom);
         const scaledViewport = page.getViewport({ scale });
         const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
         const canvas = canvasRef.current;
@@ -168,7 +172,7 @@ export function RegisterPage() {
     return () => {
       cancelled = true;
     };
-  }, [pdfDocument, pdfPage, pdfViewportSize]);
+  }, [pdfDocument, pdfPage, pdfViewportSize, pdfZoom]);
 
   useEffect(() => {
     if (!pdfViewportRef.current) return;
@@ -249,8 +253,22 @@ export function RegisterPage() {
             <h3 className="mb-1 text-base font-semibold">{REGISTRATION_DOCUMENTS[activeDocIndex].title}</h3>
             <p className="mb-2 text-sm text-slate-500">Debes revisar todas las paginas. Avanza con los botones hasta la ultima pagina.</p>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 px-3 py-2 text-sm dark:border-slate-700">
-              <span>Pagina {pdfPage} de {pdfPageCount || "..."}</span>
-              <span>Paginas revisadas: {pagesVisitedCount}/{pdfPageCount || "..."}</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <span>Pagina {pdfPage} de {pdfPageCount || "..."}</span>
+                <span>Paginas revisadas: {pagesVisitedCount}/{pdfPageCount || "..."}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="ghost" onClick={() => setPdfZoom((value) => Math.max(0.5, Number((value - 0.1).toFixed(2))))} disabled={pdfLoading || pdfZoom <= 0.5} title="Reducir zoom">
+                  <ZoomOut size={16} />
+                </Button>
+                <span className="min-w-14 text-center text-xs font-semibold">{Math.round(pdfZoom * 100)}%</span>
+                <Button type="button" variant="ghost" onClick={() => setPdfZoom((value) => Math.min(3, Number((value + 0.1).toFixed(2))))} disabled={pdfLoading || pdfZoom >= 3} title="Aumentar zoom">
+                  <ZoomIn size={16} />
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => setPdfZoom(1)} disabled={pdfLoading || pdfZoom === 1} title="Ajustar a pantalla">
+                  0
+                </Button>
+              </div>
             </div>
             <div ref={pdfViewportRef} className="h-[46dvh] overflow-auto rounded border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-950 sm:h-[54dvh] lg:h-[58dvh]">
               {pdfLoading ? <p className="py-10 text-center text-sm text-slate-500">Cargando documento...</p> : null}

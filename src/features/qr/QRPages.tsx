@@ -29,6 +29,8 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
   const [scanning, setScanning] = useState(false);
   const [scanLocked, setScanLocked] = useState(false);
   const [overlayOpen, setOverlayOpen] = useState(false);
+  const [overlayStatus, setOverlayStatus] = useState<"success" | "failure">("success");
+  const [overlayMessage, setOverlayMessage] = useState("");
   const [overlayCountdown, setOverlayCountdown] = useState(0);
 
   const stopOverlayTimers = useCallback(() => {
@@ -42,11 +44,8 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
     }
   }, []);
 
-  const lockScanning = useCallback(() => {
+  const startOverlayCountdown = useCallback(() => {
     stopOverlayTimers();
-    scanLockedRef.current = true;
-    setScanLocked(true);
-    setOverlayOpen(true);
     setOverlayCountdown(10);
     overlayIntervalRef.current = window.setInterval(() => {
       setOverlayCountdown((value) => (value > 0 ? value - 1 : 0));
@@ -60,6 +59,11 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
     }, 10_000);
   }, [stopOverlayTimers]);
 
+  const lockScanning = useCallback(() => {
+    scanLockedRef.current = true;
+    setScanLocked(true);
+  }, []);
+
   useEffect(() => {
     scanLockedRef.current = scanLocked;
   }, [scanLocked]);
@@ -72,20 +76,31 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
     setScanning(true);
     setError("");
     setMessage("");
+    scannerRef.current?.stop();
     try {
       const normalizedCode = qrCodeFromScan(value);
       setCode(normalizedCode);
       const response = await qrApi.scan({ qr_code: normalizedCode, access_type: accessType });
-      setMessage(response.message || "Registro guardado correctamente.");
+      const successMessage = response.message || "Acceso registrado";
+      setMessage(successMessage);
+      setOverlayStatus("success");
+      setOverlayMessage(successMessage);
+      setOverlayOpen(true);
+      startOverlayCountdown();
       setCode("");
       await refreshProfile();
       setAccessType(response.access_status === "in" ? "exit" : "entry");
     } catch (scanError) {
-      setError(apiErrorMessage(scanError));
+      const failureMessage = apiErrorMessage(scanError) || "Acceso rechazado";
+      setError(failureMessage);
+      setOverlayStatus("failure");
+      setOverlayMessage(failureMessage);
+      setOverlayOpen(true);
+      startOverlayCountdown();
     } finally {
       setScanning(false);
     }
-  }, [accessType, refreshProfile]);
+  }, [accessType, refreshProfile, startOverlayCountdown]);
 
   const startCamera = useCallback(async () => {
     if (!videoRef.current || scanLockedRef.current) return;
@@ -97,7 +112,6 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
       lockScanning();
       setCode(normalizedCode);
       void submit(normalizedCode);
-      scannerRef.current?.stop();
     });
     await scannerRef.current.start();
   }, [lockScanning, submit]);
@@ -127,6 +141,7 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
     scanLockedRef.current = false;
     setOverlayOpen(false);
     setScanLocked(false);
+    setOverlayMessage("");
   };
 
   return (
@@ -183,8 +198,13 @@ export function QRScannerPage({ dark, onToggleTheme }: { dark: boolean; onToggle
       </Panel>
       {overlayOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4">
-          <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 text-center shadow-soft dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-xl font-semibold">QR escaneado</p>
+          <div className={`w-full max-w-sm rounded-lg border p-5 text-center shadow-soft dark:bg-slate-900 ${
+            overlayStatus === "success"
+              ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-700"
+              : "border-red-300 bg-red-50 text-red-900 dark:border-red-700"
+          }`}>
+            <p className="text-xl font-semibold">{overlayStatus === "success" ? "Acceso registrado" : "Acceso rechazado"}</p>
+            <p className="mt-2 text-sm">{overlayMessage}</p>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               Espera {overlayCountdown}s para habilitar el cierre.
             </p>
