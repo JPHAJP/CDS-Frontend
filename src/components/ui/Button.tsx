@@ -1,8 +1,14 @@
 import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "success";
+type ButtonSize = "md" | "sm";
 
-type ButtonProps = PropsWithChildren<ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }>;
+type ButtonProps = PropsWithChildren<
+  ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+  }
+>;
 
 const variants: Record<ButtonVariant, string> = {
   primary: "bg-casa-cyan text-white hover:bg-cyan-700 focus:ring-casa-cyan",
@@ -12,10 +18,11 @@ const variants: Record<ButtonVariant, string> = {
   success: "bg-casa-green text-white hover:bg-emerald-700 focus:ring-emerald-500"
 };
 
-export function Button({ className = "", variant = "primary", children, ...props }: ButtonProps) {
+export function Button({ className = "", variant = "primary", size = "md", children, ...props }: ButtonProps) {
+  const sizeClasses = size === "sm" ? "min-h-8 px-2.5 py-1 text-xs" : "min-h-10 px-4 py-2 text-sm";
   return (
     <button
-      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-offset-slate-950 ${variants[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-offset-slate-950 ${sizeClasses} ${variants[variant]} ${className}`}
       {...props}
     >
       {children}
